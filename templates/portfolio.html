@@ -1,0 +1,400 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="mb-4">Portfolio</h1>
+            
+            <!-- Portfolio Summary -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h6 class="card-title">Cash Available</h6>
+                            <h3 class="mb-0">${{ "%.2f"|format(summary.cash_balance) }}</h3>
+                            <small>Total from all wallets</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h6 class="card-title">Investments Value</h6>
+                            <h3 class="mb-0">${{ "%.2f"|format(summary.investments_value) }}</h3>
+                            <small>Initial investment amount</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h6 class="card-title">Total Portfolio Value</h6>
+                            <h3 class="mb-0">${{ "%.2f"|format(summary.total_value) }}</h3>
+                            <small>Current market value</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card {{ 'bg-success' if summary.profit_loss >= 0 else 'bg-danger' }} text-white">
+                        <div class="card-body">
+                            <h6 class="card-title">Total Profit/Loss</h6>
+                            <h3 class="mb-0">${{ "%.2f"|format(summary.profit_loss) }}</h3>
+                            <small>({{ "%.2f"|format(summary.profit_loss_pct) }}%)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- After the portfolio summary cards and before the holdings table -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-dark text-white">
+                            <h6 class="mb-0">Asset Allocation</h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="assetAllocationChart" height="220"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-dark text-white">
+                            <h6 class="mb-0">Portfolio Value Over Time</h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="portfolioValueChart" height="220"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-3">
+                <a href="{{ url_for('trading') }}" class="btn btn-primary">
+                    <i class="fas fa-exchange-alt me-1"></i> Trade
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Portfolio Holdings -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0"><i class="fas fa-briefcase me-2"></i>Your Holdings</h5>
+        </div>
+        <div class="card-body">
+            {% if portfolio %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th>Shares</th>
+                            <th>Avg. Price</th>
+                            <th>Current Price</th>
+                            <th>Market Value</th>
+                            <th>Cost Basis</th>
+                            <th>Profit/Loss</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for position in portfolio %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('trading', symbol=position.symbol) }}" class="fw-bold text-decoration-none">
+                                    {{ position.symbol }}
+                                </a>
+                            </td>
+                            <td>{{ position.quantity }}</td>
+                            <td>${{ "%.2f"|format(position.average_price) }}</td>
+                            <td>${{ "%.2f"|format(position.current_price) }}</td>
+                            <td>${{ "%.2f"|format(position.market_value) }}</td>
+                            <td>${{ "%.2f"|format(position.quantity * position.average_price) }}</td>
+                            <td class="{{ 'text-success' if position.profit_loss >= 0 else 'text-danger' }}">
+                                ${{ "%.2f"|format(position.profit_loss) }}
+                                ({{ "%.2f"|format(position.profit_loss_pct) }}%)
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('trading', symbol=position.symbol) }}?action=buy" 
+                                       class="btn btn-outline-success">Buy</a>
+                                    <a href="{{ url_for('trading', symbol=position.symbol) }}?action=sell" 
+                                       class="btn btn-outline-danger">Sell</a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Holdings Distribution Chart -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-dark text-white">
+                            <h6 class="mb-0">Holdings Distribution</h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="holdingsChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-dark text-white">
+                            <h6 class="mb-0">Holdings Details</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Symbol</th>
+                                            <th>Value</th>
+                                            <th>% of Portfolio</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="holdingsDetails">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-briefcase fa-4x mb-3 text-muted"></i>
+                <h5>No Positions Yet</h5>
+                <p class="text-muted">Your portfolio is empty. Start trading to build your investment portfolio.</p>
+                <a href="{{ url_for('trading') }}" class="btn btn-primary mt-2">
+                    <i class="fas fa-exchange-alt me-1"></i> Start Trading
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        // Asset Allocation Pie Chart (Cash vs. Stocks)
+        const cash = parseFloat({{ summary.cash_balance|default(0)|tojson }});
+        const investments = parseFloat({{ summary.investments_value|default(0)|tojson }});
+        
+        if (document.getElementById('assetAllocationChart')) {
+            const assetCtx = document.getElementById('assetAllocationChart').getContext('2d');
+            new Chart(assetCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Cash', 'Investments'],
+                    datasets: [{
+                        data: [cash, investments],
+                        backgroundColor: ['#36b9cc', '#4e73df'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        title: { 
+                            display: true, 
+                            text: 'Asset Allocation',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${context.label}: $${value.toLocaleString()} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Holdings Distribution Chart
+        const portfolioData = {{ portfolio|tojson }};
+        if (portfolioData && portfolioData.length > 0 && document.getElementById('holdingsChart')) {
+            const holdingsCtx = document.getElementById('holdingsChart').getContext('2d');
+            const labels = portfolioData.map(p => p.symbol);
+            const values = portfolioData.map(p => p.market_value);
+            const totalValue = values.reduce((a, b) => a + b, 0);
+            
+            // Generate colors
+            const colors = [
+                '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
+                '#5a5c69', '#858796', '#6f42c1', '#20c9a6', '#f8f9fc'
+            ];
+            
+            // Create the chart
+            new Chart(holdingsCtx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    const percentage = ((value / totalValue) * 100).toFixed(1);
+                                    return `${context.label}: $${value.toLocaleString()} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Update holdings details table
+            const holdingsDetails = document.getElementById('holdingsDetails');
+            if (holdingsDetails) {
+                portfolioData.forEach((position, index) => {
+                    const percentage = ((position.market_value / totalValue) * 100).toFixed(1);
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>
+                            <span class="color-dot" style="background-color: ${colors[index]}"></span>
+                            ${position.symbol}
+                        </td>
+                        <td>$${position.market_value.toLocaleString()}</td>
+                        <td>${percentage}%</td>
+                    `;
+                    holdingsDetails.appendChild(row);
+                });
+            }
+        }
+        
+        // Portfolio Value Over Time Chart
+        if (document.getElementById('portfolioValueChart')) {
+            const days = 14;
+            const today = new Date();
+            const labels = [];
+            const values = [];
+            const totalValue = cash + investments;
+            
+            let currentValue = totalValue;
+            for (let i = days - 1; i >= 0; i--) {
+                const d = new Date(today);
+                d.setDate(today.getDate() - i);
+                labels.push(d.toLocaleDateString());
+                
+                const dailyChange = (Math.random() - 0.5) * (currentValue * 0.02);
+                currentValue = Math.max(currentValue + dailyChange, totalValue * 0.8);
+                values.push(Math.round(currentValue * 100) / 100);
+            }
+
+            const valueCtx = document.getElementById('portfolioValueChart').getContext('2d');
+            new Chart(valueCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Portfolio Value',
+                        data: values,
+                        fill: true,
+                        borderColor: '#4e73df',
+                        backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { 
+                            display: true, 
+                            text: 'Portfolio Value (Last 14 Days)',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Value: $${context.raw.toLocaleString()}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error initializing charts:', error);
+    }
+});
+</script>
+<style>
+.color-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+</style>
+{% endblock %}

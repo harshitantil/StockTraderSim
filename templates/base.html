@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title if title else 'Antil Stock Traders' }}</title>
+    <!-- Bootstrap CSS - Replit Dark Theme -->
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for stock charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        .navbar-brand img {
+            height: 40px;
+            margin-right: 10px;
+        }
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='image.jpg') }}" alt="Stock Market Logo" class="logo">
+                <span>Antil Stock Traders</span>
+            </a>
+            
+            <!-- Main Navigation Items - Always visible on all screen sizes -->
+            <div class="nav-container d-flex align-items-center justify-content-between flex-grow-1 ms-4">
+                {% if current_user.is_authenticated %}
+                <div class="main-nav d-flex">
+                    <a class="nav-link-custom {% if request.path == url_for('dashboard') %}active{% endif %}" 
+                       href="{{ url_for('dashboard') }}">
+                        <i class="fas fa-tachometer-alt me-1"></i> Dashboard
+                    </a>
+                    <a class="nav-link-custom {% if request.path == url_for('portfolio') %}active{% endif %}" 
+                       href="{{ url_for('portfolio') }}">
+                        <i class="fas fa-briefcase me-1"></i> Portfolio
+                    </a>
+                    <a class="nav-link-custom {% if request.path == url_for('wallet') %}active{% endif %}" 
+                       href="{{ url_for('wallet') }}">
+                        <i class="fas fa-wallet me-1"></i> Wallet
+                    </a>
+                    
+                    <!-- Quick Stock Search -->
+                    <div class="search-container position-relative">
+                        <input type="text" class="form-control search-input" id="stockSearch" placeholder="Search stocks...">
+                        <div class="search-results position-absolute w-100 d-none" id="searchResults"></div>
+                    </div>
+                </div>
+
+                <!-- User Profile Menu -->
+                <div class="user-nav">
+                    <div class="btn-group">
+                        <a href="#" class="btn btn-outline-light btn-sm">
+                            <i class="fas fa-bell"></i>
+                        </a>
+                        <a href="#" class="btn btn-outline-light btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle me-1"></i> {{ current_user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('dashboard') }}">
+                                    <i class="fas fa-user me-2"></i>Profile
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('dashboard') }}">
+                                    <i class="fas fa-cog me-2"></i>Settings
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('logout') }}">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                {% else %}
+                <div class="ms-auto">
+                    <a class="btn btn-outline-light btn-sm me-2" href="{{ url_for('login') }}">
+                        <i class="fas fa-sign-in-alt me-1"></i>Login
+                    </a>
+                    <a class="btn btn-primary btn-sm" href="{{ url_for('register') }}">
+                        <i class="fas fa-user-plus me-1"></i>Register
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <main class="container py-3">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Antil Stock Traders</h5>
+                    <p class="small">A stock market simulator for educational purposes. No real money is used.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="small">&copy; 2023 Antil Stock Traders. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Navigation Search JS -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('stockSearch');
+        const searchResults = document.getElementById('searchResults');
+        let searchTimeout;
+
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            
+            if (query.length < 2) {
+                searchResults.classList.add('d-none');
+                return;
+            }
+            
+            searchTimeout = setTimeout(() => {
+                fetch(`/api/search_stocks?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        searchResults.innerHTML = '';
+                        if (data.length > 0) {
+                            data.forEach(stock => {
+                                const div = document.createElement('div');
+                                div.className = 'search-item p-2 border-bottom';
+                                div.innerHTML = `
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>${stock.symbol}</strong>
+                                            <small class="text-muted d-block">${stock.name}</small>
+                                        </div>
+                                        <div class="btn-group">
+                                            <a href="/trading?symbol=${stock.symbol}" class="btn btn-sm btn-primary">
+                                                <i class="fas fa-exchange-alt"></i> Trade
+                                            </a>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="addToWatchlist('${stock.symbol}')">
+                                                <i class="fas fa-star"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `;
+                                searchResults.appendChild(div);
+                            });
+                            searchResults.classList.remove('d-none');
+                        } else {
+                            searchResults.classList.add('d-none');
+                        }
+                    });
+            }, 300);
+        });
+
+        // Close search results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.classList.add('d-none');
+            }
+        });
+    });
+
+    // Add to watchlist function
+    function addToWatchlist(symbol) {
+        fetch('/api/watchlist/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ symbol: symbol })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+            } else {
+                alert(data.error || 'Failed to add to watchlist');
+            }
+        })
+        .catch(error => {
+            alert('Error adding to watchlist');
+        });
+    }
+    </script>
+    
+    <!-- Custom JS -->
+    {% block scripts %}{% endblock %}
+</body>
+</html>

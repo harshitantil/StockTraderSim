@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <h1 class="display-4 mb-4">Welcome to Antil Stock Traders</h1>
+            <p class="lead">A powerful, real-time stock market simulator to help you practice trading without risking real money.</p>
+            
+            <div class="mt-5">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-user-plus me-2"></i>New to Trading?</h5>
+                                <p class="card-text">Create an account to start your trading journey in a risk-free environment.</p>
+                                <a href="{{ url_for('register') }}" class="btn btn-primary">Register Now</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-sign-in-alt me-2"></i>Already a Trader?</h5>
+                                <p class="card-text">Log in to access your portfolio and continue trading.</p>
+                                <a href="{{ url_for('login') }}" class="btn btn-secondary">Login</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <h3 class="mb-4">Why Choose Antil Stock Traders?</h3>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="feature-box">
+                            <i class="fas fa-chart-line fa-3x mb-3 text-primary"></i>
+                            <h5>Real-Time Data</h5>
+                            <p>Trade with real-time market data just like professional traders.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="feature-box">
+                            <i class="fas fa-wallet fa-3x mb-3 text-primary"></i>
+                            <h5>Risk-Free Learning</h5>
+                            <p>Practice trading strategies without risking real money.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="feature-box">
+                            <i class="fas fa-clipboard-list fa-3x mb-3 text-primary"></i>
+                            <h5>Track Performance</h5>
+                            <p>Monitor your portfolio performance with detailed analytics.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

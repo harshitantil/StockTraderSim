@@ -1,0 +1,574 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <!-- Left Column -->
+        <div class="col-md-8">
+            <!-- Watchlists Section -->
+            <div class="card mb-4">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-star me-2"></i>Watchlists</h5>
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#createWatchlistModal">
+                        <i class="fas fa-plus me-1"></i>New Watchlist
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="watchlistsAccordion">
+                        <!-- Watchlists will be loaded here -->
+                        <div id="watchlistsList">
+                            <div class="text-center py-3">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Market Movers Section -->
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="card-title mb-0">Market Movers</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-success mb-3">Top Gainers</h6>
+                            <div id="top-gainers">
+                                <div class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-danger mb-3">Top Losers</h6>
+                            <div id="top-losers">
+                                <div class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h6 class="text-success mb-3">Biggest Movers ($)</h6>
+                            <div id="biggest-movers">
+                                <div class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-danger mb-3">Biggest Losers ($)</h6>
+                            <div id="biggest-losers">
+                                <div class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-md-4">
+            <!-- News Section -->
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-newspaper me-2"></i>Market News</h5>
+                </div>
+                <div class="card-body">
+                    <div id="newsContainer">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading news...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Watchlist Modal -->
+<div class="modal fade" id="createWatchlistModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Watchlist</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createWatchlistForm">
+                    <div class="mb-3">
+                        <label for="watchlistName" class="form-label">Watchlist Name</label>
+                        <input type="text" class="form-control" id="watchlistName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="watchlistDescription" class="form-label">Description (Optional)</label>
+                        <textarea class="form-control" id="watchlistDescription" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="createWatchlist()">Create</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Stock to Watchlist Modal -->
+<div class="modal fade" id="addStockModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Stock to Watchlist</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="stockSearch" class="form-label">Search Stock</label>
+                    <input type="text" class="form-control" id="stockSearch" placeholder="Enter stock symbol...">
+                    <div id="searchResults" class="list-group mt-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Load watchlists
+    function loadWatchlists() {
+        console.log('Loading watchlists...');
+        fetch('/api/watchlists')
+            .then(response => {
+                console.log('Watchlists response status:', response.status);
+                return response.json();
+            })
+            .then(watchlists => {
+                console.log('Watchlists data:', watchlists);
+                const watchlistsList = document.getElementById('watchlistsList');
+                watchlistsList.innerHTML = '';
+                
+                if (watchlists.length === 0) {
+                    watchlistsList.innerHTML = `
+                        <div class="text-center py-3">
+                            <p class="text-muted mb-0">No watchlists found. Create your first watchlist!</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                watchlists.forEach((watchlist, index) => {
+                    const watchlistHtml = `
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button ${index === 0 ? '' : 'collapsed'}" type="button" 
+                                        data-bs-toggle="collapse" data-bs-target="#watchlist${watchlist.id}">
+                                    ${watchlist.name}
+                                    <span class="badge bg-primary ms-2">${watchlist.stocks.length}</span>
+                                </button>
+                            </h2>
+                            <div id="watchlist${watchlist.id}" class="accordion-collapse collapse ${index === 0 ? 'show' : ''}" 
+                                 data-bs-parent="#watchlistsAccordion">
+                                <div class="accordion-body">
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <button class="btn btn-sm btn-primary" onclick="showAddStockModal(${watchlist.id})">
+                                            <i class="fas fa-plus me-1"></i>Add Stock
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteWatchlist(${watchlist.id})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Symbol</th>
+                                                    <th>Price</th>
+                                                    <th>Change</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="watchlist${watchlist.id}Stocks">
+                                                ${watchlist.stocks.map(stock => `
+                                                    <tr>
+                                                        <td>${stock.symbol}</td>
+                                                        <td>$${parseFloat(stock.price).toFixed(2)}</td>
+                                                        <td class="${parseFloat(stock.change) >= 0 ? 'text-success' : 'text-danger'}">
+                                                            $${parseFloat(stock.change).toFixed(2)} (${parseFloat(stock.change_percent).toFixed(2)}%)
+                                                        </td>
+                                                        <td>
+                                                            <a href="/trading?symbol=${stock.symbol}" class="btn btn-sm btn-primary">
+                                                                <i class="fas fa-exchange-alt"></i>
+                                                            </a>
+                                                            <button class="btn btn-sm btn-danger" onclick="removeFromWatchlist(${watchlist.id}, '${stock.symbol}')">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    watchlistsList.insertAdjacentHTML('beforeend', watchlistHtml);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading watchlists:', error);
+                const watchlistsList = document.getElementById('watchlistsList');
+                watchlistsList.innerHTML = `
+                    <div class="alert alert-danger mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error loading watchlists. Please try refreshing the page.
+                    </div>
+                `;
+            });
+    }
+
+    // Function to format volume numbers
+    function formatVolume(volume) {
+        if (volume >= 1000000) {
+            return (volume / 1000000).toFixed(2) + 'M';
+        } else if (volume >= 1000) {
+            return (volume / 1000).toFixed(2) + 'K';
+        }
+        return volume.toString();
+    }
+
+    // Function to update market movers
+    function updateMarketMovers() {
+        fetch('/api/market-movers')
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to fetch market movers');
+                }
+
+                // Top Gainers by Percentage
+                const topGainersHtml = data.top_gainers.map(stock => `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <a href="/trading?symbol=${stock.symbol}" class="text-decoration-none">
+                                <strong>${stock.symbol}</strong>
+                            </a>
+                            <small class="d-block text-muted">$${stock.price.toFixed(2)}</small>
+                        </div>
+                        <span class="badge bg-success">+${stock.change_percent.toFixed(2)}%</span>
+                    </div>
+                `).join('');
+                
+                // Top Losers by Percentage
+                const topLosersHtml = data.top_losers.map(stock => `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <a href="/trading?symbol=${stock.symbol}" class="text-decoration-none">
+                                <strong>${stock.symbol}</strong>
+                            </a>
+                            <small class="d-block text-muted">$${stock.price.toFixed(2)}</small>
+                        </div>
+                        <span class="badge bg-danger">${stock.change_percent.toFixed(2)}%</span>
+                    </div>
+                `).join('');
+
+                // Biggest Movers by Dollar Value
+                const biggestMoversHtml = data.biggest_movers.map(stock => `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <a href="/trading?symbol=${stock.symbol}" class="text-decoration-none">
+                                <strong>${stock.symbol}</strong>
+                            </a>
+                            <small class="d-block text-muted">$${stock.price.toFixed(2)}</small>
+                        </div>
+                        <span class="badge bg-success">+$${Math.abs(stock.change).toFixed(2)}</span>
+                    </div>
+                `).join('');
+
+                // Biggest Losers by Dollar Value
+                const biggestLosersHtml = data.biggest_losers.map(stock => `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <a href="/trading?symbol=${stock.symbol}" class="text-decoration-none">
+                                <strong>${stock.symbol}</strong>
+                            </a>
+                            <small class="d-block text-muted">$${stock.price.toFixed(2)}</small>
+                        </div>
+                        <span class="badge bg-danger">-$${Math.abs(stock.change).toFixed(2)}</span>
+                    </div>
+                `).join('');
+                
+                document.getElementById('top-gainers').innerHTML = topGainersHtml;
+                document.getElementById('top-losers').innerHTML = topLosersHtml;
+                document.getElementById('biggest-movers').innerHTML = biggestMoversHtml;
+                document.getElementById('biggest-losers').innerHTML = biggestLosersHtml;
+            })
+            .catch(error => {
+                console.error('Error fetching market movers:', error);
+                const errorHtml = '<div class="text-danger">Failed to load data</div>';
+                document.getElementById('top-gainers').innerHTML = errorHtml;
+                document.getElementById('top-losers').innerHTML = errorHtml;
+                document.getElementById('biggest-movers').innerHTML = errorHtml;
+                document.getElementById('biggest-losers').innerHTML = errorHtml;
+            });
+    }
+
+    // Create new watchlist
+    window.createWatchlist = function() {
+        const name = document.getElementById('watchlistName').value;
+        const description = document.getElementById('watchlistDescription').value;
+
+        fetch('/api/watchlists', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name, description })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                $('#createWatchlistModal').modal('hide');
+                document.getElementById('createWatchlistForm').reset();
+                loadWatchlists();
+            } else {
+                alert(data.error || 'Failed to create watchlist');
+            }
+        })
+        .catch(error => {
+            console.error('Error creating watchlist:', error);
+            alert('Failed to create watchlist. Please try again.');
+        });
+    };
+
+    // Show add stock modal
+    window.showAddStockModal = function(watchlistId) {
+        window.currentWatchlistId = watchlistId;
+        const modal = new bootstrap.Modal(document.getElementById('addStockModal'));
+        modal.show();
+        
+        // Clear previous search results
+        document.getElementById('stockSearch').value = '';
+        document.getElementById('searchResults').innerHTML = '';
+    };
+
+    // Search stocks
+    document.getElementById('stockSearch').addEventListener('input', function(e) {
+        const query = e.target.value;
+        if (query.length < 2) {
+            document.getElementById('searchResults').innerHTML = '';
+            return;
+        }
+
+        // Show loading indicator
+        const searchResults = document.getElementById('searchResults');
+        searchResults.innerHTML = `
+            <div class="list-group-item text-center">
+                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <span class="ms-2">Searching...</span>
+            </div>
+        `;
+
+        fetch(`/api/search_stocks?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(results => {
+                if (results.length === 0) {
+                    searchResults.innerHTML = `
+                        <div class="list-group-item text-center text-muted">
+                            <i class="fas fa-search me-2"></i>No results found
+                        </div>
+                    `;
+                    return;
+                }
+
+                searchResults.innerHTML = results.map(stock => `
+                    <a href="#" class="list-group-item list-group-item-action" 
+                       onclick="event.preventDefault(); addToWatchlist('${stock.symbol}')">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>${stock.symbol}</strong>
+                                <div class="small text-muted">${stock.name}</div>
+                            </div>
+                            <div class="badge bg-secondary">${stock.region}</div>
+                        </div>
+                    </a>
+                `).join('');
+            })
+            .catch(error => {
+                console.error('Error searching stocks:', error);
+                searchResults.innerHTML = `
+                    <div class="list-group-item text-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i>Error searching stocks. Please try again.
+                    </div>
+                `;
+            });
+    });
+
+    // Add stock to watchlist
+    window.addToWatchlist = function(symbol) {
+        if (!window.currentWatchlistId) {
+            alert('Please select a watchlist first');
+            return;
+        }
+
+        fetch(`/api/watchlists/${window.currentWatchlistId}/stocks`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ symbol })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success || data.message) {
+                $('#addStockModal').modal('hide');
+                document.getElementById('stockSearch').value = '';
+                document.getElementById('searchResults').innerHTML = '';
+                loadWatchlists();
+                
+                // Show success message
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 end-0 m-3';
+                alertDiv.innerHTML = `
+                    ${data.message || 'Stock added successfully'}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                document.body.appendChild(alertDiv);
+                
+                // Remove alert after 3 seconds
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 3000);
+            } else {
+                throw new Error(data.error || 'Failed to add stock to watchlist');
+            }
+        })
+        .catch(error => {
+            console.error('Error adding stock to watchlist:', error);
+            alert(error.message || 'Failed to add stock to watchlist. Please try again.');
+        });
+    };
+
+    // Remove stock from watchlist
+    window.removeFromWatchlist = function(watchlistId, symbol) {
+        fetch(`/api/watchlists/${watchlistId}/stocks/${symbol}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadWatchlists();
+            } else {
+                alert(data.error || 'Failed to remove stock from watchlist');
+            }
+        })
+        .catch(error => {
+            console.error('Error removing stock from watchlist:', error);
+            alert('Failed to remove stock from watchlist. Please try again.');
+        });
+    };
+
+    // Delete watchlist
+    window.deleteWatchlist = function(watchlistId) {
+        if (!confirm('Are you sure you want to delete this watchlist?')) {
+            return;
+        }
+
+        fetch(`/api/watchlists/${watchlistId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadWatchlists();
+            } else {
+                alert(data.error || 'Failed to delete watchlist');
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting watchlist:', error);
+            alert('Failed to delete watchlist. Please try again.');
+        });
+    };
+
+    // News update functionality
+    function updateNews() {
+        fetch('/api/news')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const newsContainer = document.getElementById('newsContainer');
+                    if (data.news.length === 0) {
+                        newsContainer.innerHTML = '<p class="text-muted text-center">No new news at the moment</p>';
+                        return;
+                    }
+                    
+                    let newsHtml = '';
+                    data.news.forEach(article => {
+                        const date = new Date(article.published_at);
+                        newsHtml += `
+                            <div class="news-item mb-3">
+                                <h6 class="mb-1">
+                                    <a href="${article.url}" target="_blank" class="text-decoration-none">
+                                        ${article.title}
+                                    </a>
+                                </h6>
+                                <p class="small text-muted mb-0">
+                                    ${article.source} • ${date.toLocaleTimeString()}
+                                </p>
+                                ${article.description ? `
+                                    <p class="small text-muted mt-1">
+                                        ${article.description}
+                                    </p>
+                                ` : ''}
+                            </div>
+                        `;
+                    });
+                    newsContainer.innerHTML = newsHtml;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching news:', error);
+                document.getElementById('newsContainer').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Error loading news
+                    </div>
+                `;
+            });
+    }
+
+    // Update news every 5 minutes
+    updateNews();
+    setInterval(updateNews, 5 * 60 * 1000);
+
+    // Initial load
+    loadWatchlists();
+    updateMarketMovers();
+    
+    // Update market movers every 5 minutes
+    setInterval(updateMarketMovers, 5 * 60 * 1000);
+});
+</script>
+{% endblock %}

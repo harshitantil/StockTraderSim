@@ -1,0 +1,328 @@
+/* Antil Stock Traders - Custom Styles */
+
+/* General styles */
+:root {
+    --theme-green: #42ba96;
+    --theme-red: #df4759;
+    --theme-blue: #3a86ff;
+    --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
+    --hover-transition: all 0.3s ease;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+/* Navigation styles */
+.nav-container {
+    font-size: 0.95rem;
+}
+
+.nav-link-custom {
+    padding: 0.5rem 1rem;
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.nav-link-custom:hover {
+    color: white;
+    border-bottom-color: rgba(255, 255, 255, 0.5);
+}
+
+.nav-link-custom.active {
+    color: white;
+    border-bottom-color: var(--theme-blue);
+}
+
+.nav-search-container {
+    width: 220px;
+}
+
+#navSearchResults {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.bg-dark-subtle {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.search-result-item {
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.search-result-item:hover {
+    background-color: rgba(58, 134, 255, 0.1);
+}
+
+/* Dashboard specific styles */
+.dashboard-header {
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: var(--hover-transition);
+}
+
+.dashboard-header:hover {
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Stat cards */
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.05);
+    transition: var(--hover-transition);
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--card-shadow);
+}
+
+.stat-icon-bg {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.bg-primary-subtle {
+    background-color: rgba(58, 134, 255, 0.2);
+    color: var(--theme-blue);
+}
+
+.bg-success-subtle {
+    background-color: rgba(66, 186, 150, 0.2);
+    color: var(--theme-green);
+}
+
+.bg-danger-subtle {
+    background-color: rgba(223, 71, 89, 0.2);
+    color: var(--theme-red);
+}
+
+.bg-dark-subtle {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Quick actions */
+.quick-actions {
+    transition: var(--hover-transition);
+}
+
+.quick-actions:hover {
+    box-shadow: var(--card-shadow);
+}
+
+/* Stock icon */
+.stock-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: rgba(58, 134, 255, 0.2);
+    color: var(--theme-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.875rem;
+}
+
+/* Portfolio table styles */
+.position-table th {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+}
+
+.position-table tbody tr {
+    transition: var(--hover-transition);
+}
+
+.position-table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Watchlist items */
+.watchlist-items .list-group-item {
+    position: relative;
+    transition: var(--hover-transition);
+    border-left: 3px solid transparent;
+    padding-right: 45px; /* Space for actions */
+}
+
+.watchlist-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-left-color: var(--theme-blue);
+}
+
+.watchlist-actions {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    transition: var(--hover-transition);
+}
+
+.watchlist-item:hover .watchlist-actions {
+    opacity: 1;
+}
+
+/* Market insight cards */
+.market-insight-card {
+    padding: 1.5rem;
+    height: 100%;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.05);
+    transition: var(--hover-transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.market-insight-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--card-shadow);
+}
+
+.insight-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: rgba(58, 134, 255, 0.2);
+    color: var(--theme-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.learning-topics {
+    margin-top: 1rem;
+}
+
+/* Quick trade search dropdown */
+#quickTradeResults {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.quick-trade-result {
+    cursor: pointer;
+    transition: var(--hover-transition);
+}
+
+.quick-trade-result:hover {
+    background-color: rgba(58, 134, 255, 0.1);
+}
+
+.z-index-dropdown {
+    z-index: 1000;
+}
+
+/* Fadeout animation for removing items */
+.fade-out {
+    opacity: 0;
+    transform: translateX(20px);
+    transition: all 0.3s ease;
+}
+
+/* Chart container */
+.chart-container {
+    position: relative;
+    height: 400px;
+    width: 100%;
+}
+
+/* Trade history items */
+.trade-item {
+    border-left: 4px solid transparent;
+    transition: var(--hover-transition);
+}
+
+.trade-item.buy {
+    border-left-color: var(--theme-green);
+}
+
+.trade-item.sell {
+    border-left-color: var(--theme-red);
+}
+
+.trade-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Custom scrollbar for tables */
+.table-responsive::-webkit-scrollbar {
+    height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+/* Modal search styles */
+#modalSearchResults .list-group-item {
+    transition: var(--hover-transition);
+}
+
+#modalSearchResults .list-group-item:hover {
+    background-color: rgba(58, 134, 255, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .stat-card {
+        width: 100%;
+    }
+    
+    .dashboard-header .card-body {
+        padding: 1rem;
+    }
+    
+    .card-header {
+        padding: 0.75rem;
+    }
+    
+    h5.card-title {
+        font-size: 1rem;
+    }
+    
+    .btn-group > .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .stock-icon {
+        width: 24px;
+        height: 24px;
+        font-size: 0.75rem;
+    }
+}
